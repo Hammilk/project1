@@ -16,8 +16,7 @@ int main(int argc, char** argv){
         sleep(1);
         printf("USER PID: %d PPID: %d Iteration: %d after sleeping\n", getpid(), getppid(), i+1);
     }
-    sleep(3);
-    return EXIT_SUCCESS;
+    exit(1);
 }
 
 

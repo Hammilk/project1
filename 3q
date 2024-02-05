@@ -23,13 +23,31 @@ void print_usage(const char * app){
     fprintf(stderr, "   iter is how many iterations the children will run\n");
 }
 
-
-int parent(int argc, char** argv[],int proc, int simul, int iter){
+void parent(int argc, char** argv[],int proc, int simul, int iter){
+    
     pid_t childPid;
-     
-    if(proc > 0){
+    int processCount = 0;
+    int initialRun;
+    int terminatedPid;
 
-    if((childPid = fork()) == 0){
+    if(proc<simul){
+        initialRun = proc;
+    }
+    else{
+        initialRun = simul;
+    }
+
+    for(int i = 0; i<initialRun; i++){
+        childPid = fork();
+        processCount++;
+    }
+    while(processCount < proc){
+       terminatedPid = wait(&status);
+       childPid = fork();
+       process count++;
+    }
+
+    if(childPid == 0){
 
         char execIter[MAXDIGITS];
         sprintf(execIter, "%d", iter);
@@ -42,16 +60,11 @@ int parent(int argc, char** argv[],int proc, int simul, int iter){
         fprintf(stderr,"Exec failed, terminating\n");
         exit(1);
     }
-    else if (childPid>0){
+    else{
         printf("I'm parent. PID is %d, and child PID is %d\n", getpid(), childPid);
-        parent(argc, argv,  proc - 1, simul, iter);
         wait(0);
     }
-    else{
-        perror("Fork Failed\n");
-    }
-    return EXIT_SUCCESS;
-    }
+
 }
 
 int main(int argc, char* argv[]){
@@ -86,12 +99,13 @@ int main(int argc, char* argv[]){
         }
     }
 
-    printf("test");
+
     char** args[3];
 
     parent(1, args,options.proc, options.simul, options.iter);
 
     return (EXIT_SUCCESS);
 }
+
 
 
