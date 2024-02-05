@@ -1,7 +1,11 @@
 #include<stdio.h>
-#include"header.h"
+#include<sys/types.h>
 #include<stdlib.h>
 #include<unistd.h>
+#include<sys/wait.h>
+
+//Define maximum digits of iterations
+#define MAXDIGITS 2
 
 
 
@@ -13,20 +17,45 @@ typedef struct{
 
 
 void print_usage(const char * app){
-    fprintf(stderr, "usage: %s [-h] [-n proc] [-s simul] [-iter]\n", app); //Check if this is actually /app
+    fprintf(stderr, "usage: %s [-h] [-n proc] [-s simul] [-t iter]\n", app); //Check if this is actually /app
     fprintf(stderr, "   proc is the total amount of children\n");
     fprintf(stderr, "   simul is how many children can run simultaneously\n");
     fprintf(stderr, "   iter is how many iterations the children will run\n");
 }
 
+void parent(int argc, char** argv[], int iter){
+    
+    pid_t childPid = fork();
+    if(childPid == 0){
+
+        char execIter[MAXDIGITS];
+        sprintf(execIter, "%d", iter);
+        char *test = execIter;
+
+        char* args[] = {"./user", execIter, 0};
+
+        //execvp(args[0], args);
+        execlp(args[0],args[0],args[1], NULL);
+
+        fprintf(stderr,"Exec failed, terminating\n");
+        exit(1);
 
 
-int main(int argc, char *argv[]){
+
+    }
+    else{
+        printf("I'm parent. PID is %d, and child PID is %d\n", getpid(), childPid);
+        wait(0);
+    }
+
+}
+
+int main(int argc, char* argv[]){
     
     options_t options;
-    options.proc = 0;
-    options.simul = 0;
-    options.iter = 0;
+    options.proc = 1;
+    options.simul = 1;
+    options.iter = 1;
 
     const char optstr[] = "hn:s:t:";
 
@@ -35,19 +64,15 @@ int main(int argc, char *argv[]){
         switch(opt){
             case 'h':
                 print_usage(argv[0]);
-                printf("test h\n");
                 return(EXIT_SUCCESS);
             case 'n':
                 options.proc = atoi(optarg);
-                printf("test %i\n", atoi(optarg));
                 break;
             case 's':
                 options.simul = atoi(optarg);
-                printf("test %i\n", atoi(optarg));
                 break;
             case 't':
                 options.iter = atoi(optarg);
-                printf("test %i\n", atoi(optarg));
                 break;
             default:
                 printf("Invalid options %c\n", optopt);
@@ -56,11 +81,14 @@ int main(int argc, char *argv[]){
         
         }
     }
-    exit(EXIT_SUCCESS);
 
+    int iter = options.iter;
+    char** args[3];
 
+    parent(1, args, iter);
 
-
-
+    return (EXIT_SUCCESS);
 }
+
+
 

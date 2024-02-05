@@ -5,12 +5,19 @@
 #include "header.h"
 
 
-void user(int iter){
-    for(int i = 0; i < iter; i++){
+int main(int argc, char** argv){
+    
+
+    int iterations = atoi(argv[1]);
+    
+
+    for(int i = 0; i < iterations; i++){
         printf("USER PID: %d PPID: %d Iteration: %d before sleeping\n", getpid(), getppid(), i+1);
         sleep(1);
         printf("USER PID: %d PPID: %d Iteration: %d after sleeping\n", getpid(), getppid(), i+1);
     }
+    sleep(3);
+    return EXIT_SUCCESS;
 }
 
 
