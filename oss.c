@@ -77,6 +77,12 @@ int main(int argc, char* argv[]){
     int * pSimulCount = (int *)(paddr);
     *pSimulCount = 0;
 
+    //Note on control on simultaneous processes//
+    //This function uses shared memory to track simultaneous processes
+    //The function increments simultaneous process counter at the beginning of fork process on line 99 
+    //Then the function decrements the counter in child executable file (user.c)
+    //This design was chosen so that the counter updates precisely when the child begins and ends
+
     //Start fork loop
     while(processCount<options.proc){
         //Debug Statements
