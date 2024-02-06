@@ -1,16 +1,24 @@
-CC = gcc
-CFLAGS = -g
-TARGET = test
-OBJS = oss.c user.c
-.SUFFIXES: .c .o
+CC = gcc -g3
+CFLAGS = -g3
+TARGET1 = user
+TARGET2 = oss
 
-.DEFAULT_GOAL : $(TARGET)
-$(TARGET): $(OBJS)
-	$(CC) -o $@ $(OBJS)
+OBJS1 = user.o
+OBJS2 = oss.o
 
-.c.o:
-	$(CC) $(CFLAGS) -c $<
+all: $(TARGET1) $(TARGET2)
 
-.PHONY: clean
+$(TARGET1):	$(OBJS1)
+	$(CC) -o $(TARGET1) $(OBJS1)
+
+$(TARGET2): $(OBJS2)
+	$(CC) -o $(TARGET2) $(OBJS2)
+
+user.o:	user.c
+	$(CC) $(CFLAGS) -c user.c
+
+oss.o: oss.c
+	$(CC) $(CFLAGS) -c oss.c
+
 clean:
-	/bin/rm -f *.o $(TARGET)
+	/bin/rm -f *.o $(TARGET1) $(TARGET2)
