@@ -130,7 +130,7 @@ int main(int argc, char* argv[]){
         else if(p > 0 && ((*pSimulCount) > (options.simul-3))){
             //printf("In Termination Loop with %d simultaneous processes\n", *pSimulCount);
             processCount++;
-            terminatedChild = waitpid(0, &status, 0);
+            terminatedChild = waitpid(-1, &status, 0);
             //printf("Child PID: %d has been terminated with status code: %d\n", terminatedChild, WEXITSTATUS(status));
             
         }
