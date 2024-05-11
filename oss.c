@@ -6,10 +6,7 @@
 #include<sys/ipc.h>
 #include<sys/shm.h>
 
-//Define maximum digits of iterations
 #define MAXDIGITS 2
-#define SHMKEY 516158
-#define BUFF_SZ sizeof (int)
 
 //Set up system command options
 typedef struct{
@@ -26,13 +23,27 @@ void print_usage(const char * app){
     fprintf(stderr, "   iter is how many iterations the children will run\n");
 }
 
+int terminateCheck(){
+    int status = 0;
+    pid_t terminatedChild = waitpid(0, &status, WNOHANG);
+    if(terminatedChild > 0){
+        return terminatedChild;
+    }
+    else if(terminatedChild == 0){
+        return 0;
+    }
+    else{
+        return -1;
+    }
+}
+
 
 int main(int argc, char* argv[]){
     //Set up defaults for system calls    
     options_t options;
-    options.proc = 1;
-    options.simul = 1;
-    options.iter = 1;
+    options.proc = 7;
+    options.simul = 3;
+    options.iter = 2;
 
     const char optstr[] = "hn:s:t:";
 
@@ -60,53 +71,33 @@ int main(int argc, char* argv[]){
     }
     //Set up counters and variables 
 
+    int terminatedChildren = 0;
+    int simulCount = 0;
     int processCount = 0;
-    //int simulCount = 0;
-    int status;
-    int terminatedChild;
-    pid_t p;
-
-    //Set up Shared Memory
-    int shmid = shmget(SHMKEY, BUFF_SZ, 0777 | IPC_CREAT);
-    if(shmid == -1){
-        fprintf(stderr, "Error in shmget\n");
-        exit(1);
-    }
-
-    char * paddr = (char *)(shmat(shmid, 0, 0));
-    int * pSimulCount = (int *)(paddr);
-    *pSimulCount = 0;
-
-    //Note on control on simultaneous processes//
-    //This function uses shared memory to track simultaneous processes
-    //The function increments simultaneous process counter at the beginning of fork process on line 99 
-    //Then the function decrements the counter in child executable file (user.c)
-    //This design was chosen so that the counter updates precisely when the child begins and ends
 
     //Start fork loop
-    while(processCount<options.proc){
+    while(terminatedChildren<options.proc){
         //Debug Statements
-       // printf("Parent ID: %d\n", getpid());
-       // printf("Count: %d\n", processCount);
-       // printf("Simul: %d\n", *pSimulCount);
-       // printf("Child ID: %d\n", p);
-        
+        int terminatedChild = 0;
+        if(simulCount > 0 && (terminatedChild = terminateCheck()) < 0){
+            perror("Wait for PID failed\n");
+        }
+        else if(terminatedChild > 0){
+            terminatedChildren++;
+            simulCount--;
+        }
+        pid_t child = 0;
         //Start of child processes
-        if((p = fork()) == 0 ){
-
-            //Set up child shared memory pointer
-            int * cSimulCount = (int *)(shmat(shmid, 0, 0));
-            (*cSimulCount)++;
-            
-            //printf("Point check: %d\n", *cSimulCount);
-            //printf("Child launched ID: %d\n", getpid());
+        if(
+            simulCount < options.simul &&
+            processCount < options.proc &&
+            (child = fork()) == 0){
             
             //Set integer from options.iter into string to pass
             char execIter[MAXDIGITS];
-            sprintf(execIter, "%d", 2);
+            sprintf(execIter, "%d", options.iter);
             char * test = execIter;
             char * args[] = {"./user", execIter, 0};
-            shmdt(cSimulCount);
 
             //Execute 
             execlp(args[0], args[0], args[1], NULL);
@@ -116,40 +107,12 @@ int main(int argc, char* argv[]){
             exit(1);
         }
         //This statement ends loop when total processes are finished
-        else if(p > 0 && processCount > (options.proc - 2)){
-            terminatedChild = waitpid(p, &status, 0);
-            //printf("Loop done\n");
-
-            //Free up shared memory pointer
-            shmdt(pSimulCount);
-            shmctl(shmid, IPC_RMID, NULL);
-
-            break;
-        }
-        //This loop halts parent execution while concurrent process capacity is reached
-        else if(p > 0 && ((*pSimulCount) > (options.simul-3))){
-            //printf("In Termination Loop with %d simultaneous processes\n", *pSimulCount);
-            processCount++;
-            terminatedChild = waitpid(-1, &status, 0);
-            //printf("Child PID: %d has been terminated with status code: %d\n", terminatedChild, WEXITSTATUS(status));
-            
-        }
-        //Increments process counter if parent has not reach concurrency limit
-        else if(p > 0){
-            /*
-            if((waitpid(-1, &status, WNOHANG))>0){
-                printf("testDecrement\n");
-                simulCount--;
-            }
+        if(child > 0){
             simulCount++;
-            */
             processCount++;
-            //printf("Normal Parent Loop\n");
         }
-        else{
-            perror("Fork failed\n");
-        }
-    }
+        
+   }
         return (EXIT_SUCCESS);
 }
 

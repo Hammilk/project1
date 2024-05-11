@@ -1,5 +1,18 @@
 Author: David Pham
 
+IMPROVEMENTS:
+
+I vastly simplified the code from the previous version by removing shared memory which was used to count simultaneous counts before.
+I added a simultaneous count variable to oss.c to count how many processes were running concurrently.
+I readded a waitpid(....WNOHANG) to check for terminated processes.
+I added a simultaneous count conditional variable to the fork launch section of the code to correctly launch children when the number of
+simultaneous processes is below the limit.
+I added a process count conditional variable to the fork launch section of the code to correctly prevent launches of children if the 
+limit has been reached.
+
+tldr: Deleted like 2/3rd of the code and added correct check
+
+
 COMPILATION STEPS:
 
 To compile and run the project, ensure that directory has all required files:
